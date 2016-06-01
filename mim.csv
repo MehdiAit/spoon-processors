@@ -1,0 +1,3 @@
+com.example.geoffrey.myapplication.Test#shouldNotBeStatic()
+com.example.geoffrey.myapplication.MainActivity#shouldNotBeStatic()
+com.example.geoffrey.myapplication.Test#shouldNotBeStatic2()
