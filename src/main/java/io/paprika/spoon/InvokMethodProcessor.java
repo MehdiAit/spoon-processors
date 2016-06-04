@@ -5,7 +5,7 @@ import spoon.processing.AbstractProcessor;
 import spoon.reflect.code.*;
 
 /**
- * Reports warnings when empty catch blocks are found.
+ * Created by mehdi on 04/05/16
  */
 public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
     private boolean is_getter = false;
@@ -41,6 +41,7 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
             getEnvironment().report(this, Level.WARN, invok, "INFO : GETTER on --> " + invok.getPosition());
         }
         else if(is_seter){
+            //Use Statement
             CtStatement igsSetter = getFactory().Code().createCodeSnippetStatement("var_b = " + invok.getArguments().get(0));
             invok.replace(igsSetter);
             getEnvironment().report(this, Level.WARN, invok, "INFO : SETTER on --> " + invok.getPosition());
