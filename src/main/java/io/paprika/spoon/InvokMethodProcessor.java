@@ -20,7 +20,7 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
     private boolean isSetter = false;
 
     // Format the Csv output to get the IGS invocation and position
-    public void formatCsv(){
+    private void formatCsv(){
         appInfo = new HashMap<>();
         igsName = new ArrayList<>();
         ArrayList<String> csv_reader = CsvReader.csv("igs");
@@ -34,7 +34,7 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
     }
 
     // Format the Spoon methods information to .... Csv output
-    public String [] spoonFormat(String spoonMethod){
+    private String [] spoonFormat(String spoonMethod){
         // Split the Spoon method name
         return spoonMethod.split("#")[1].split("\\(|\\)");
 
@@ -83,12 +83,14 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
             //Use Expression
             CtExpression igsGetter = getFactory().Code().createCodeSnippetExpression("var_a");
             invok.replace(igsGetter);
+            isGetter = false;
             getEnvironment().report(this, Level.WARN, invok, "INFO : GETTER on --> " + invok.getPosition());
         }
         else if(isSetter){
             //Use Statement
             CtStatement igsSetter = getFactory().Code().createCodeSnippetStatement("var_b = " + invok.getArguments().get(0));
             invok.replace(igsSetter);
+            isSetter = false;
             getEnvironment().report(this, Level.WARN, invok, "INFO : SETTER on --> " + invok.getPosition());
         }
 
