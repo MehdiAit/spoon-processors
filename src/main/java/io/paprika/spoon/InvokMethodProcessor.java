@@ -1,14 +1,13 @@
 package io.paprika.spoon;
 
+import com.sun.xml.internal.bind.v2.TODO;
 import org.apache.log4j.Level;
 import spoon.processing.AbstractProcessor;
 import spoon.reflect.code.*;
 import spoon.reflect.declaration.CtClass;
 import spoon.reflect.declaration.CtMethod;
-
 import spoon.reflect.visitor.filter.AbstractFilter;
 import utils.CsvReader;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -92,17 +91,33 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
 
     @Override
     public void process(CtInvocation invok) {
-        if (isGetter){
-            //Use Expression
-            //CtExpression igsGetter = getFactory().Code().createCodeSnippetExpression("var_a");
-            //invok.replace(igsGetter);
 
+        if (isGetter){
+            // Get the root class
+            CtClass root = (CtClass)invok.getParent().getParent().getParent().getParent();
+
+            // Get the IGS or Setter
+            CtMethod method = (CtMethod) root.getMethodsByName(igsInvocationName).get(0);
+
+            // Filter to get the field of the getter/setter
+            method.getBody().getLastStatement().getElements(new AbstractFilter<CtReturn>(CtReturn.class) {
+                @Override
+                public boolean matches(CtReturn element) {
+                    getField = element.getReturnedExpression().toString();
+                    return super.matches(element);
+                }
+            });
+
+            //Use Expression
+            CtExpression igsGetter = getFactory().Code().createCodeSnippetExpression(getField);
+            invok.replace(igsGetter);
             isGetter = false;
             getEnvironment().report(this, Level.WARN, invok, "INFO : GETTER on --> " + invok.getPosition());
         }
         else if(isSetter){
             // Get the root class
             CtClass root = (CtClass)invok.getParent().getParent().getParent();
+
             // Get the IGS or Setter
             CtMethod method = (CtMethod) root.getMethodsByName(igsInvocationName).get(0);
 
@@ -116,6 +131,7 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
             });
 
             //Use CtStatement for code transformation
+            //TODO : change the string arg on "createCodeSnippetStatement" with a "CtAssignment" class
             CtStatement igsSetter = getFactory().Code().createCodeSnippetStatement(getField + " = " + invok.getArguments().get(0));
             invok.replace(igsSetter);
             isSetter = false;
