@@ -12,7 +12,7 @@ public class CsvReader {
 
     public static ArrayList csv(String name){
         Scanner scanner = null;
-        ArrayList<String> mim_list = new ArrayList<String>();
+        ArrayList<String> smell_list = new ArrayList<String>();
 
         try {
             scanner = new Scanner(new File("/home/antonin/Documents/internship/spoon/paprika-spoon-processors/"+name+".csv"));
@@ -27,11 +27,11 @@ public class CsvReader {
         while (scanner.hasNext())
         {
             String a = scanner.next();
-            mim_list.add(a);
+            smell_list.add(a);
         }
 
         scanner.close();
-        return mim_list;
+        return smell_list;
     }
 
 }

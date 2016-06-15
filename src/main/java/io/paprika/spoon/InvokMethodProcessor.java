@@ -27,7 +27,7 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
     private String igsInvocationName = null;
 
     // Return the getter/setter field application
-    String getField = null;
+    private String getField = null;
 
     // Format the Csv output to get the IGS invocation and position
     private void formatCsv(){
