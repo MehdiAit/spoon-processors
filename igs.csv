@@ -1,0 +1,3 @@
+app_key,full_name,gs_name
+myapplication,shouldNotBeStatic#com.example.geoffrey.myapplication.Test,getVar_a#com.example.geoffrey.myapplication.Test
+myapplication,shouldNotBeStatic#com.example.geoffrey.myapplication.Test,setVar_b#com.example.geoffrey.myapplication.Test

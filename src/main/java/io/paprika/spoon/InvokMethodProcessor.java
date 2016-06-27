@@ -29,6 +29,13 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
     // Return the getter/setter field application
     private String getField = null;
 
+    public InvokMethodProcessor()
+    {
+        System.out.println("Processor InvokMethodProcessor Start ... ");
+        // Get applications information from the CSV - output
+        formatCsv();
+    }
+
     // Format the Csv output to get the IGS invocation and position
     private void formatCsv(){
         appInfo = new HashMap<>();
@@ -55,8 +62,6 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
 
     @Override
     public boolean isToBeProcessed(CtInvocation invok) {
-        // Get applications information from the CSV - output
-        formatCsv();
 
         // Get the executable in the current file
         String my_igs = invok.getExecutable().toString();
