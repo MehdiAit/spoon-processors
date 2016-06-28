@@ -28,9 +28,10 @@ public class MethodLogProcessorMIM extends AbstractProcessor<CtMethod> {
 
         ArrayList<String> csv_reader = CsvReader.csv("mim");
         for (String e : csv_reader) {
-            String [] split = e.split("#");
-            // 1; Where the IGS has been invoked - 2; The IGS invoked
-            mimMethode.add(split[1].split("\\(")[0]);
+            //TODO splite in the CSV reader
+            String [] split = e.split(",");
+            // Method name
+            mimMethode.add(split[1].split("#")[0]);
         }
     }
 
