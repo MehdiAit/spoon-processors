@@ -62,7 +62,6 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
 
     @Override
     public boolean isToBeProcessed(CtInvocation invok) {
-
         // Get the executable in the current file
         String my_igs = invok.getExecutable().toString();
 
@@ -96,14 +95,13 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
 
     @Override
     public void process(CtInvocation invok) {
+        // Get the root class
+        CtClass root = invok.getParent(CtClass.class);
+
+        // Get the IGS or Setter
+        CtMethod method = (CtMethod) root.getMethodsByName(igsInvocationName).get(0);
 
         if (isGetter){
-            // Get the root class
-            CtClass root = (CtClass)invok.getParent().getParent().getParent().getParent();
-
-            // Get the IGS or Setter
-            CtMethod method = (CtMethod) root.getMethodsByName(igsInvocationName).get(0);
-
             // Filter to get the field of the getter/setter
             method.getBody().getLastStatement().getElements(new AbstractFilter<CtReturn>(CtReturn.class) {
                 @Override
@@ -120,12 +118,6 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
             getEnvironment().report(this, Level.WARN, invok, "INFO : GETTER on --> " + invok.getPosition());
         }
         else if(isSetter){
-            // Get the root class
-            CtClass root = (CtClass)invok.getParent().getParent().getParent();
-
-            // Get the IGS or Setter
-            CtMethod method = (CtMethod) root.getMethodsByName(igsInvocationName).get(0);
-
             // Filter to get the field of the getter/setter
             method.getBody().getLastStatement().getElements(new AbstractFilter<CtAssignment>(CtAssignment.class) {
                 @Override
