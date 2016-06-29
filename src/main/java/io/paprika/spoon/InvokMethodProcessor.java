@@ -1,6 +1,5 @@
 package io.paprika.spoon;
 
-import com.sun.xml.internal.bind.v2.TODO;
 import org.apache.log4j.Level;
 import spoon.processing.AbstractProcessor;
 import spoon.reflect.code.*;
@@ -10,7 +9,6 @@ import spoon.reflect.visitor.filter.AbstractFilter;
 import utils.CsvReader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * Created by mehdi on 04/05/16
