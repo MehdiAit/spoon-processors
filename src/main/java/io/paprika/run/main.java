@@ -1,14 +1,32 @@
 package io.paprika.run;
 
+import spoon.Launcher;
+import io.paprika.spoon.*;
+
 /**
  * Created by Mehdi on 16-06-30.
  */
 public class main {
     public static void main(String[] args) throws Exception {
-        spoon.Launcher.main(new String[]{
-                "-p", "io.paprika.spoon.MethodLogProcessorIGS",
-                "-i", "/home/antonin/Documents/internship/spoon/psychic-octo-palm-tree/app/src"
-                //"--source-classpath", "/home/antonin/Documents/internship/spoon/psychic-octo-palm-tree/app/src/main/java/com/example/geoffrey/myapplication"
-        });
+        Launcher run = new Launcher();
+        //
+        //If we got all sources compiled, we can remove this options.
+        run.getEnvironment().setNoClasspath(true);
+
+        //
+        run.getEnvironment().setShouldCompile(false);
+        //
+        run.getEnvironment().setAutoImports(true);
+
+        // Add processor
+        run.addProcessor(new MethodLogProcessorIGS());
+        run.addProcessor(new MethodLogProcessorMIM());
+
+        // Source project
+        run.addInputResource("/home/antonin/Documents/internship/spoon/SoundWaves/app/src/main/java/org/bottiger/podcast/views/dialogs");
+
+        //Process now
+        run.run();
+
     }
 }
