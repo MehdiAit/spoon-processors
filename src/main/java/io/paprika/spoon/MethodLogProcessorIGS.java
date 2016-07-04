@@ -30,13 +30,23 @@ public class MethodLogProcessorIGS extends AbstractProcessor<CtMethod> {
         for (String e : csv_reader) {
             String [] split = e.split(",");
             // 1; Where the IGS has been invoked - 2; The IGS invoked
-            igsInvocation.add(split[1].split("#")[0]);
+            igsInvocation.add(split[1]);//.split("#")[0]
         }
     }
 
     @Override
     public boolean isToBeProcessed(CtMethod candidate) {
-        for (String e : igsInvocation) if(e.equals(candidate.getSimpleName().split("\\(")[0])) return true ;
+        String class_file = candidate.getPosition().getFile().getName().split("\\.")[0];
+
+        for(String occurence : igsInvocation){
+            String csvClassName = occurence.substring(occurence.lastIndexOf(".")+1);
+
+            if(class_file.equals(csvClassName) &&
+                    occurence.split("#")[0].equals(candidate.getSimpleName().split("\\(")[0])){
+                return true;
+            }
+        }
+
         return false;
     }
 

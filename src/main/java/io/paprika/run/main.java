@@ -19,12 +19,12 @@ public class main {
         run.getEnvironment().setAutoImports(true);
 
         // Add processor
-        run.addProcessor(new MethodLogProcessorIGS());
+        //run.addProcessor(new MethodLogProcessorIGS());
         run.addProcessor(new MethodLogProcessorMIM());
-        run.addProcessor(new MethodLogProcessorHMU());
+        //run.addProcessor(new MethodLogProcessorHMU());
 
         // Source project
-        run.addInputResource("C:\\Users\\Twilibri\\Java\\org.bottiger.podcast_292_src\\app\\src\\main");
+        run.addInputResource("C:\\Users\\Twilibri\\Java\\org.bottiger.podcast_292_src\\app\\src\\main\\java\\org\\bottiger\\podcast");
 
         //Process now
         run.run();
