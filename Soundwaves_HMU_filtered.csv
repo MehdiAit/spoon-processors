@@ -1,0 +1,5 @@
+m.app_key,full_name
+app_key,updateDatabase#org.bottiger.podcast.parser.FeedUpdater
+app_key,onCreate#org.bottiger.podcast.provider.PodcastProvider
+app_key,<init>#org.bottiger.podcast.utils.DateUtils$1
+app_key,<clinit>#org.bottiger.podcast.utils.PaletteHelper
