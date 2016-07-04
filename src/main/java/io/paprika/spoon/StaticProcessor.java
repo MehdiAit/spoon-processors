@@ -11,6 +11,8 @@ import java.util.ArrayList;
 /**
  * Created by geoffrey on 08/04/16
  * Edited by mehdi on 30/05/16.
+ *
+ * MIM Handler
  */
 public class StaticProcessor extends AbstractProcessor<CtMethod> {
 

@@ -26,7 +26,7 @@ public class MethodLogProcessorMIM extends AbstractProcessor<CtMethod> {
     private void formatCsv(){
         mimMethode = new HashSet<>();
 
-        ArrayList<String> csv_reader = CsvReader.csv("mim");
+        ArrayList<String> csv_reader = CsvReader.csv("Soundwaves_MIM_filtered");
         for (String e : csv_reader) {
             //TODO splite in the CSV reader
             String [] split = e.split(",");
@@ -42,8 +42,17 @@ public class MethodLogProcessorMIM extends AbstractProcessor<CtMethod> {
     }
 
     public void process(CtMethod element) {
+
         CtStatement logMethod = getFactory().Code().createCodeSnippetStatement("android.util.Log.d(\"SMELL\",\"MIM\")");
-        element.getBody().insertBegin(logMethod);
+
+        try{
+            element.getBody().insertBegin(logMethod);
+        }
+        // In case of empty method
+        catch(NullPointerException e){
+            element.getFactory().Code().createCtBlock(logMethod);
+        }
+
         getEnvironment().report(this, Level.WARN, element, "INFO :" + element.getReference());
     }
 }

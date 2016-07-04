@@ -14,12 +14,14 @@ public class CsvReader {
         Scanner scanner = null;
         ArrayList<String> smell_list = new ArrayList<String>();
         try {
-            scanner = new Scanner(new File("/home/antonin/Documents/internship/spoon/paprika-spoon-processors/"+name+".csv"));
+            scanner = new Scanner(new File(name+".csv"));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+            System.exit(1);
         }
 
         scanner.next();
+
         while (scanner.hasNext())
         {
             String a = scanner.next();

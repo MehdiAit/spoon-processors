@@ -21,9 +21,10 @@ public class main {
         // Add processor
         run.addProcessor(new MethodLogProcessorIGS());
         run.addProcessor(new MethodLogProcessorMIM());
+        run.addProcessor(new MethodLogProcessorHMU());
 
         // Source project
-        run.addInputResource("/home/antonin/Documents/internship/spoon/SoundWaves/app/src/main/java/org/bottiger/podcast/views/dialogs");
+        run.addInputResource("C:\\Users\\Twilibri\\Java\\org.bottiger.podcast_292_src\\app\\src\\main");
 
         //Process now
         run.run();

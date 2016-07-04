@@ -12,6 +12,8 @@ import java.util.HashMap;
 
 /**
  * Created by mehdi on 04/05/16
+ *
+ * IGS Handler
  */
 public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
     // Application name and methods invocation
@@ -42,8 +44,9 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
 
         for (String e : csv_reader) {
             String [] split = e.split(",");
-            // 1; Where the IGS has been invoked - 2; The IGS invoked
+            // 0; App key (name) - 1; Where the IGS has been invoked - 2; The IGS invoked
             igsName.add(split[2]);
+            // Rewrites on the same key until it changes
             appInfo.put(split[1], igsName);
         }
     }
@@ -73,7 +76,7 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
                 String [] methodName = spoonFormat(my_igs);
                 for (String f: appInfo.get(e)) {
                     if(methodName[0].equals(f.split("#")[0])){
-                        // Is it a getter or setter ? if split.length > 1 this is a setter
+                        // Is it a getter or setter ? if split.length > 1 (a parameter exist) this is a setter
                         if (methodName.length > 1) {
                             isSetter = true;
                             igsInvocationName = methodName[0];
