@@ -13,7 +13,7 @@ import java.util.HashSet;
  * Created by mehdi on 16-06-27.
  */
 public class MethodLogProcessorMIM extends AbstractProcessor<CtMethod> {
-    private HashSet<String> mimMethode;
+    private ArrayList<String> mimMethode;
 
     public MethodLogProcessorMIM()
     {
@@ -24,20 +24,31 @@ public class MethodLogProcessorMIM extends AbstractProcessor<CtMethod> {
 
     // Format the Csv output to get the IGS invocation and position
     private void formatCsv(){
-        mimMethode = new HashSet<>();
+        mimMethode = new ArrayList<>();
 
         ArrayList<String> csv_reader = CsvReader.csv("Soundwaves_MIM_filtered");
         for (String e : csv_reader) {
             //TODO splite in the CSV reader
             String [] split = e.split(",");
             // Method name
-            mimMethode.add(split[1].split("#")[0]);
+            mimMethode.add(split[1]);//.split("#")[0]);
         }
     }
 
     @Override
     public boolean isToBeProcessed(CtMethod candidate) {
-        for (String e : mimMethode) if(e.equals(candidate.getSimpleName().split("\\(")[0])) return true ;
+        String class_file = candidate.getPosition().getFile().getName().split("\\.")[0];
+
+        for(String occurence : mimMethode){
+            String csvClassName = occurence.substring(occurence.lastIndexOf(".")+1);
+
+            if(class_file.equals(csvClassName) &&
+                    occurence.split("#")[0].equals(candidate.getSimpleName().split("\\(")[0])){
+                System.out.println(candidate.getSimpleName());
+                return true;
+            }
+        }
+
         return false;
     }
 

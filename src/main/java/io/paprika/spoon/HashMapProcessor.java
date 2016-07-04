@@ -50,7 +50,7 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
         */
 
         for (String hmu: hmuOccurences) {
-            String className = hmu.substring(hmu.lastIndexOf("\\.")+1);
+            String className = hmu.substring(hmu.lastIndexOf(".")+1);
             String methodName = hmu.split("#")[0];
 
             if(class_name.equals(className) && methodName.equals(call[0])){
