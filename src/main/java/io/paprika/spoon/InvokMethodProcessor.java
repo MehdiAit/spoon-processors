@@ -70,7 +70,8 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
         String class_file = invok.getPosition().getFile().getName().split("\\.")[0];
 
         for (String e: appInfo.keySet()) {
-            String csvClassName = e.split("\\.")[e.split("\\.").length - 1];
+            String[] splitedElement = e.split("\\.");
+            String csvClassName = splitedElement[splitedElement.length - 1];
             if (class_file.equals(csvClassName)){
 
                 String [] methodName = spoonFormat(my_igs);
