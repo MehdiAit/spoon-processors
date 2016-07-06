@@ -40,7 +40,7 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
     private void formatCsv(){
         appInfo = new HashMap<>();
         igsName = new ArrayList<>();
-        ArrayList<String> csv_reader = CsvReader.csv("igs");
+        ArrayList<String> csv_reader = CsvReader.csv("Soundwaves_IGS_filtered_valid");
 
         for (String e : csv_reader) {
             String [] split = e.split(",");
