@@ -1,12 +1,11 @@
 package io.paprika.spoon;
 
+import android.util.ArrayMap;
 import org.apache.log4j.Level;
 import spoon.processing.AbstractProcessor;
 import spoon.reflect.code.*;
-import spoon.reflect.declaration.CtClass;
-import spoon.reflect.declaration.CtElement;
-import spoon.reflect.declaration.CtMethod;
-import spoon.reflect.declaration.ModifierKind;
+import spoon.reflect.declaration.*;
+import spoon.reflect.reference.CtTypeReference;
 import spoon.reflect.reference.CtVariableReference;
 import spoon.reflect.visitor.filter.AbstractFilter;
 import spoon.reflect.visitor.filter.ReferenceTypeFilter;
@@ -69,11 +68,22 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
 
         for (CtAssignment codeLine : list) {
 
-            CtExpression assigned = codeLine.getAssigned();
-            withAssignedCast = codeLine.getAssigned().getType().getActualClass().equals(HashMap.class);
+            CtFieldWrite assigned = (CtFieldWrite) codeLine.getAssigned();
+
+            withAssignedCast = root.getField(assigned.getVariable().toString()).getType().getActualClass().equals(HashMap.class);
+
+            if(withAssignedCast){
+                CtField attribute = root.getField(assigned.getVariable().toString());
+
+                List<CtTypeReference<?>> types = attribute.getType().getActualTypeArguments();
+
+                attribute.setType(getFactory().Code().createCtTypeReference(ArrayMap.class));
+
+                attribute.getType().setActualTypeArguments(types);
 
 
-
+                System.out.println("correction");
+            }
 
             /*
             List<CtVariableReference> refs = codeLine.getAssigned().getReferences(new ReferenceTypeFilter<CtVariableReference>(CtVariableReference.class));
@@ -113,12 +123,6 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
                         codeLine.insertAfter(getFactory().Code().createCodeSnippetStatement(codeLine.getAssigned()+".putAll("+arg+")"));
 
                         //root.getField("mValuesMap").replace(getFactory().Field().create(root.getField("mValuesMap")));
-
-                        System.out.println(root.getField(
-                                codeLine.getAssigned().toString().substring(
-                                        codeLine.getAssigned().toString().lastIndexOf(".")+1
-                                )
-                        ).toString());
                     }
 
                     break;
