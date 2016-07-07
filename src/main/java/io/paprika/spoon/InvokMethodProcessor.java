@@ -63,6 +63,7 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
 
     @Override
     public boolean isToBeProcessed(CtInvocation invok) {
+        // TODO change to CtMethod for faster filter
         // Get the executable in the current file
         String my_igs = invok.getExecutable().toString();
 
