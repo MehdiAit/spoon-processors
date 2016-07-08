@@ -36,7 +36,6 @@ public class StaticProcessor extends AbstractProcessor<CtMethod> {
     public void process(CtMethod element) {
         element.addModifier(ModifierKind.STATIC);
         getEnvironment().report(this, Level.WARN, element, "INFO :" + element.getReference());
-        System.out.println("----------- Static processor end --------------");
     }
 
     private boolean checkValidToCsv(CtMethod candidate){

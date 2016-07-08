@@ -1,2 +1,6 @@
 app_key,full_name,gs_name
 app_key,stop#org.bottiger.podcast.Player.SoundWavesPlayer,isInitialized#org.bottiger.podcast.Player.SoundWavesPlayer
+app_key,compareTo#org.bottiger.podcast.provider.QueueEpisode,getPriority#org.bottiger.podcast.provider.QueueEpisode
+app_key,toString#org.bottiger.podcast.provider.QueueEpisode,getPriority#org.bottiger.podcast.provider.QueueEpisode
+app_key,toString#org.bottiger.podcast.provider.QueueEpisode,getTitle#org.bottiger.podcast.provider.QueueEpisode
+app_key,markForSubscription#org.bottiger.podcast.provider.SlimImplementations.SlimSubscription,setIsSubscribed#org.bottiger.podcast.provider.SlimImplementations.SlimSubscription

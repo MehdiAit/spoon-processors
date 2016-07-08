@@ -21,17 +21,13 @@ public class MethodLogProcessorMIM extends AbstractProcessor<CtMethod> {
     {
         System.out.println("Processor MethodLogProcessorMIM Start ... ");
         // Get applications information from the CSV - output
-        mimMethods = CsvReader.formatCsv("Soundwaves_MIM_filtered");
+        mimMethods = CsvReader.formatCsv("Soundwaves_MIM_filtered_valid");
     }
 
     @Override
     public boolean isToBeProcessed(CtMethod candidate) {
 
-        if (checkValidToCsv(candidate) && checkAnnotation(candidate)){
-            System.out.println(candidate.getPosition().toString()+"#"+candidate.getSimpleName());
-            return true;
-        }
-        return false;
+        return checkValidToCsv(candidate) && checkAnnotation(candidate);
     }
 
     public void process(CtMethod element) {
@@ -65,7 +61,6 @@ public class MethodLogProcessorMIM extends AbstractProcessor<CtMethod> {
     }
 
     private boolean checkAnnotation(CtMethod candidate){
-        System.out.println(candidate.getSimpleName()+" : "+candidate.getAnnotations().toString());
         for(CtAnnotation annotation : candidate.getAnnotations()){
             if(annotation.toString().trim().matches("(.*)@Override(.*)")){
                 return false;

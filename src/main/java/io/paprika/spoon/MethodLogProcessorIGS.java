@@ -19,7 +19,7 @@ public class MethodLogProcessorIGS extends AbstractProcessor<CtMethod> {
     {
         System.out.println("Processor MethodLogProcessorIGS Start ... ");
         // Get applications information from the CSV - output
-        igsInvocation = CsvReader.formatCsv("Soundwaves_IGS_filtered");
+        igsInvocation = CsvReader.formatCsv("Soundwaves_IGS_filtered_valid");
     }
 
     @Override
