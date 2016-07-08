@@ -19,10 +19,9 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Created by geoffrey on 08/04/16
- * Edited by mehdi on 30/05/16.
+ * Created by kevin on 01/07/16
  *
- * MIM Handler
+ * HMU Handler
  */
 public class HashMapProcessor extends AbstractProcessor<CtMethod> {
 
