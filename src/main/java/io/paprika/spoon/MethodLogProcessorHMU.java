@@ -13,31 +13,28 @@ import java.util.HashSet;
  * Created by mehdi on 16-06-27.
  */
 public class MethodLogProcessorHMU extends AbstractProcessor<CtMethod> {
-    private HashSet<String> mimMethode;
+    private HashSet<String> hmuMethods;
 
     public MethodLogProcessorHMU()
     {
         System.out.println("Processor MethodLogProcessorHMU Start ... ");
         // Get applications information from the CSV - output
-        formatCsv();
-    }
-
-    // Format the Csv output to get the IGS invocation and position
-    private void formatCsv(){
-        mimMethode = new HashSet<>();
-
-        ArrayList<String> csv_reader = CsvReader.csv("Soundwaves_HMU_filtered");
-        for (String e : csv_reader) {
-            //TODO splite in the CSV reader
-            String [] split = e.split(",");
-            // Method name
-            mimMethode.add(split[1].split("#")[0]);
-        }
+        hmuMethods = CsvReader.formatCsv("Telegram_HMU_filtered_valid");
     }
 
     @Override
     public boolean isToBeProcessed(CtMethod candidate) {
-        for (String e : mimMethode) if(e.equals(candidate.getSimpleName().split("\\(")[0])) return true ;
+        String class_file = candidate.getPosition().getFile().getName().split("\\.")[0];
+
+        for(String occurence : hmuMethods){
+            String csvClassName = occurence.substring(occurence.lastIndexOf(".")+1);
+
+            if(class_file.equals(csvClassName) &&
+                    occurence.split("#")[0].equals(candidate.getSimpleName().split("\\(")[0])){
+                return true;
+            }
+        }
+
         return false;
     }
 

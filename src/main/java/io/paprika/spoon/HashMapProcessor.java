@@ -1,122 +1,184 @@
 package io.paprika.spoon;
 
+import android.util.ArrayMap;
 import org.apache.log4j.Level;
 import spoon.processing.AbstractProcessor;
-import spoon.reflect.code.CtInvocation;
-import spoon.reflect.declaration.CtClass;
-import spoon.reflect.declaration.CtMethod;
-import spoon.reflect.declaration.ModifierKind;
+import spoon.reflect.code.*;
+import spoon.reflect.declaration.*;
+import spoon.reflect.reference.CtTypeReference;
+import spoon.reflect.reference.CtVariableReference;
+import spoon.reflect.visitor.filter.AbstractFilter;
+import spoon.reflect.visitor.filter.ReferenceTypeFilter;
+import spoon.reflect.visitor.filter.RegexFilter;
+import spoon.reflect.visitor.filter.TypeFilter;
+import spoon.support.reflect.code.CtConstructorCallImpl;
+import spoon.support.reflect.reference.SpoonClassNotFoundException;
 import utils.CsvReader;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 /**
- * Created by geoffrey on 08/04/16
- * Edited by mehdi on 30/05/16.
+ * Created by kevin on 01/07/16
  *
- * MIM Handler
+ * HMU Handler
  */
 public class HashMapProcessor extends AbstractProcessor<CtMethod> {
 
-    private ArrayList<String> hmuOccurences;
+    private HashSet<String> hmuOccurences;
     private HashMapUsage useCase = HashMapUsage.Normal;
+    private boolean withAssignedCast = false;
 
-    // Format the Csv output to get the IGS invocation and position
-    private void formatCsv(){
-        hmuOccurences = new ArrayList<>();
-        ArrayList<String> csv_reader = CsvReader.csv("igs");
-
-        for (String e : csv_reader) {
-            String [] split = e.split(",");
-            hmuOccurences.add(split[1]);
-        }
+    public HashMapProcessor(){
+        System.out.println("Processor HashMapProcessor Start ... ");
+        // Get applications information from the CSV - output
+        hmuOccurences = CsvReader.formatCsv("Telegram_HMU_filtered_valid");
     }
 
     @Override
     public boolean isToBeProcessed(CtMethod invok) {
+
         // Get applications information from the CSV - output
-        formatCsv();
+        //formatCsv();
 
         // Get the method name + parameters
-        String[] call = invok.getReference().toString().split("#")[1].split("\\(|\\)");
+        //String[] call = invok.getReference().toString().split("#")[1].split("\\(|\\)");
 
-        // Get the file class name
-        String class_name = invok.getPosition().getFile().getName().split("\\.")[0];
+        return checkValidToCsv(invok);
+    }
 
-        /*
-        * Check if current method is in csv
-        * Then check if HashMap is used
-        */
+    public void process(CtMethod invok) {
+        CtClass root = invok.getParent(CtClass.class);
 
-        for (String hmu: hmuOccurences) {
-            String className = hmu.substring(hmu.lastIndexOf(".")+1);
-            String methodName = hmu.split("#")[0];
-
-            if(class_name.equals(className) && methodName.equals(call[0])){
-                // Check if HashMap is used then find usage case
-                if(invok.getType().getActualClass().getName().matches(".*HashMap.*")){
-                    /*
-                    * Case 1 : Normal affectation -> HashMap<>()
-                    * - simple transformation to ArrayMap
-                    *
-                    * Case 2 : Parameterized affectation -> HashMap<>(int initialCapacity)
-                    * - simple transformation ArrayMap<>(initialCapacity)
-                    *
-                    * Case 3 : Parameterized affectation -> HashMap<>(Map mapToCopy)
-                    * - Create empty ArrayMap
-                    * - use addAll(mapToCopy) with the parameter
-                    *
-                    * Case 4 : clone usage -> HashMap.clone()
-                    * - Use a copy constructor
-                    *
-                    * Case 5 : Two parameter hashMap -> HashMap<>(int,float)
-                    * - Ignore second parameter
-                    */
-                    if(call.length == 1){
-                        // Check how the instance is created (new or clone)
-                        useCase = HashMapUsage.Normal;
-
-                        //useCase = HashMapUsage.Clone;
-                    }
-                    else if(call.length == 2){
-                        // Check if it is an int or a Map
-                        useCase = HashMapUsage.OneParameterInt;
-                        //useCase = HashMapUsage.OneParameterMap;
-                    }
-                    else if(call.length == 3){
-                        useCase = HashMapUsage.TwoParameter;
-                    }
-                    return true;
+        List<CtAssignment> list = invok.getBody().getElements(new AbstractFilter<CtAssignment>(CtAssignment.class) {
+            @Override
+            public boolean matches(CtAssignment element) {
+                try {
+                    return (element.getAssignment().getType().getActualClass().equals(HashMap.class));
                 }
+                catch (SpoonClassNotFoundException e){
+                    System.err.println(e.getMessage());
+                }
+                return false;
+            }
+        });
+
+
+
+        for (CtAssignment codeLine : list) {
+
+            CtFieldWrite assigned = (CtFieldWrite) codeLine.getAssigned();
+
+            withAssignedCast = root.getField(assigned.getVariable().toString()).getType().getActualClass().equals(HashMap.class);
+
+            if(withAssignedCast){
+                CtField attribute = root.getField(assigned.getVariable().toString());
+
+                List<CtTypeReference<?>> types = attribute.getType().getActualTypeArguments();
+
+                attribute.setType(getFactory().Code().createCtTypeReference(ArrayMap.class));
+
+                attribute.getType().setActualTypeArguments(types);
+
+
+                System.out.println("correction");
+            }
+
+            /*
+            List<CtVariableReference> refs = codeLine.getAssigned().getReferences(new ReferenceTypeFilter<CtVariableReference>(CtVariableReference.class));
+            for(CtVariableReference ref : refs){
+                System.out.println(ref.toString());
+            }
+            */
+
+            CtConstructorCall constr = (CtConstructorCall) codeLine.getAssignment();
+            CtVariableRead arg;
+
+            switch (constr.getArguments().size()){
+                case 0:
+                    codeLine.getAssignment().replace(
+                            getFactory().Code().createCodeSnippetExpression(
+                                    codeLine.getAssignment().toString().replaceFirst("HashMap","ArrayMap")
+                            )
+                    );
+                    break;
+                case 1:
+                    arg = (CtVariableRead)constr.getArguments().get(0);
+
+                    if(arg.getType().getActualClass().equals(HashSet.class)){
+                        constr.replace(
+                                getFactory().Code().createCodeSnippetExpression(
+                                        constr.toString().replaceFirst("HashMap","ArrayMap")
+                                )
+                        );
+                    }
+                    else {
+                        constr.removeArgument(arg);
+                        constr.replace(
+                                getFactory().Code().createCodeSnippetExpression(
+                                        constr.toString().replaceFirst("HashMap","ArrayMap")
+                                )
+                        );
+                        codeLine.insertAfter(getFactory().Code().createCodeSnippetStatement(codeLine.getAssigned()+".putAll("+arg+")"));
+
+                        //root.getField("mValuesMap").replace(getFactory().Field().create(root.getField("mValuesMap")));
+                    }
+
+                    break;
+                case 2:
+                    arg = (CtVariableRead)constr.getArguments().get(1);
+
+                    constr.removeArgument(arg);
+                    constr.replace(
+                            getFactory().Code().createCodeSnippetExpression(
+                                    constr.toString().replaceFirst("HashMap","ArrayMap")
+                            )
+                    );
+                    break;
+                default:
+                    break;
+            }
+
+
+            //codeLine.getFactory().Code().createCodeSnippetExpression()
+
+            System.out.println("I found an HashMap in "+invok.getSimpleName());
+        }
+
+
+
+
+
+//        switch(useCase){
+//            case Normal:
+//                break;
+//            case OneParameterInt:
+//                break;
+//            case OneParameterMap:
+//                break;
+//            case TwoParameter:
+//                break;
+//            case Clone:
+//                break;
+//            default:
+//                break;
+//        }
+
+    }
+
+    private boolean checkValidToCsv(CtMethod candidate){
+        String class_file = candidate.getPosition().getFile().getName().split("\\.")[0];
+
+        for(String occurence : hmuOccurences){
+            String csvClassName = occurence.substring(occurence.lastIndexOf(".")+1);
+
+            if(class_file.equals(csvClassName) &&
+                    occurence.split("#")[0].equals(candidate.getSimpleName().split("\\(")[0])){
+                return true;
             }
         }
 
         return false;
-    }
-
-    public void process(CtMethod invok) {
-
-
-
-        CtClass root = invok.getParent(CtClass.class);
-
-
-        switch(useCase){
-            case Normal:
-                break;
-            case OneParameterInt:
-                break;
-            case OneParameterMap:
-                break;
-            case TwoParameter:
-                break;
-            case Clone:
-                break;
-            default:
-                break;
-        }
-
     }
 
     private enum HashMapUsage{
