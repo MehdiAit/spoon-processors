@@ -44,7 +44,7 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
 
         for (String e : csv_reader) {
             String [] split = e.split(",");
-            // 0; App key (name) - 1; Where the IGS has been invoked - 2; The IGS invoked
+            // 0, App key (name) - 1, Where the IGS has been invoked - 2, The IGS invoked
             igsName.add(split[2]);
             // Rewrites on the same key until it changes
             appInfo.put(split[1], igsName);
@@ -71,7 +71,8 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
         String class_file = invok.getPosition().getFile().getName().split("\\.")[0];
 
         for (String e: appInfo.keySet()) {
-            String csvClassName = e.split("\\.")[e.split("\\.").length - 1];
+            String[] splitedElement = e.split("\\.");
+            String csvClassName = splitedElement[splitedElement.length - 1];
             if (class_file.equals(csvClassName)){
 
                 String [] methodName = spoonFormat(my_igs);
