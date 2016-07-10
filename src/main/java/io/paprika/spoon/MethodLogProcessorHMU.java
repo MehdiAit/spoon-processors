@@ -15,11 +15,11 @@ import java.util.HashSet;
 public class MethodLogProcessorHMU extends AbstractProcessor<CtMethod> {
     private HashSet<String> hmuMethods;
 
-    public MethodLogProcessorHMU(String smellFile)
+    public MethodLogProcessorHMU(String file)
     {
         System.out.println("Processor MethodLogProcessorHMU Start ... ");
         // Get applications information from the CSV - output
-        hmuMethods = CsvReader.formatCsv(smellFile);
+        hmuMethods = CsvReader.formatCsv(file);
     }
 
     @Override

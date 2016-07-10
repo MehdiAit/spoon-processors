@@ -28,8 +28,8 @@ public class main {
         run.addProcessor(new InvokMethodProcessor());
 
         // Source project
-        //run.addInputResource("/home/antonin/Documents/internship/spoon/Packlist_Version/packlist/app/src/main/java");
-        run.addInputResource("/home/antonin/Documents/internship/spoon/Packlist_Version/packlist/app/src/main/groovy");
+        run.addInputResource("C:\\Users\\Twilibri\\Java\\net.osmand.plus_235_src\\android\\OsmAnd-java\\src\\net\\osmand");
+        //run.addInputResource("C:\\Users\\Twilibri\\Java\\org.telegram.messenger_7673_src\\TMessagesProj\\src\\main\\java\\org\\telegram\\messenger\\Animation");
 
         //Process now
         run.run();

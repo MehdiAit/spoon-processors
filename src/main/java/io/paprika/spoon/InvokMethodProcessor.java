@@ -29,18 +29,18 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
     // Return the getter/setter field application
     private String getField = null;
 
-    public InvokMethodProcessor()
+    public InvokMethodProcessor(String file)
     {
         System.out.println("Processor InvokMethodProcessor Start ... ");
         // Get applications information from the CSV - output
-        formatCsv();
+        formatCsv(file);
     }
 
     // Format the Csv output to get the IGS invocation and position
-    private void formatCsv(){
+    private void formatCsv(String file){
         appInfo = new HashMap<>();
         igsName = new ArrayList<>();
-        ArrayList<String> csv_reader = CsvReader.csv("Packlist_IGS_filtered");
+        ArrayList<String> csv_reader = CsvReader.csv(file);
 
         for (String e : csv_reader) {
             String [] split = e.split(",");
