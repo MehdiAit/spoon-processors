@@ -8,6 +8,11 @@ import io.paprika.spoon.*;
  */
 public class main {
     public static void main(String[] args) throws Exception {
+        final String HMU = "osmand_HMU_filtered";
+        final String IGS = "osmand_IGS_filtered";
+        final String MIM = "osmand_MIM_filtered";
+
+
         Launcher run = new Launcher();
         //
         //If we got all sources compiled, we can remove this options.
@@ -19,13 +24,12 @@ public class main {
         run.getEnvironment().setAutoImports(true);
 
         // Add processor
-        // Log
-        //run.addProcessor(new MethodLogProcessorIGS("Packlist_IGS_filtered"));
-        //run.addProcessor(new MethodLogProcessorMIM("Packlist_MIM_filtered"));
-        //run.addProcessor(new MethodLogProcessorHMU("Packlist_HMU_filtered"));
-
-        // Corrections
-        run.addProcessor(new InvokMethodProcessor());
+        //run.addProcessor(new MethodLogProcessorIGS(IGS));
+        //run.addProcessor(new MethodLogProcessorMIM(MIM));
+        run.addProcessor(new MethodLogProcessorHMU(HMU));
+        //run.addProcessor(new StaticProcessor(MIM));
+        //run.addProcessor(new InvokMethodProcessor(IGS));
+        run.addProcessor(new HashMapProcessor(HMU));
 
         // Source project
         run.addInputResource("C:\\Users\\Twilibri\\Java\\net.osmand.plus_235_src\\android\\OsmAnd-java\\src\\net\\osmand");
