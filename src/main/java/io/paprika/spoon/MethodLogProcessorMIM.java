@@ -7,9 +7,7 @@ import spoon.reflect.declaration.CtAnnotation;
 import spoon.reflect.declaration.CtMethod;
 import utils.CsvReader;
 
-import java.lang.annotation.Annotation;
 import java.util.HashSet;
-import java.util.List;
 
 /**
  * Created by mehdi on 16-06-27.
@@ -17,11 +15,11 @@ import java.util.List;
 public class MethodLogProcessorMIM extends AbstractProcessor<CtMethod> {
     private HashSet<String> mimMethods;
 
-    public MethodLogProcessorMIM()
+    public MethodLogProcessorMIM(String smellFile)
     {
         System.out.println("Processor MethodLogProcessorMIM Start ... ");
         // Get applications information from the CSV - output
-        mimMethods = CsvReader.formatCsv("Soundwaves_MIM_filtered_valid");
+        mimMethods = CsvReader.formatCsv(smellFile);
     }
 
     @Override

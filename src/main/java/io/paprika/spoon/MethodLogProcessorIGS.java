@@ -15,11 +15,11 @@ import java.util.HashSet;
 public class MethodLogProcessorIGS extends AbstractProcessor<CtMethod> {
     private HashSet<String> igsInvocation;
 
-    public MethodLogProcessorIGS()
+    public MethodLogProcessorIGS(String smellFile)
     {
         System.out.println("Processor MethodLogProcessorIGS Start ... ");
         // Get applications information from the CSV - output
-        igsInvocation = CsvReader.formatCsv("Soundwaves_IGS_filtered_valid");
+        igsInvocation = CsvReader.formatCsv(smellFile);
     }
 
     @Override

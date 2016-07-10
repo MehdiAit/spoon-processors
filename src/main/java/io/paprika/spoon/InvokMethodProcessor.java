@@ -40,7 +40,7 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
     private void formatCsv(){
         appInfo = new HashMap<>();
         igsName = new ArrayList<>();
-        ArrayList<String> csv_reader = CsvReader.csv("Soundwaves_IGS_filtered_valid");
+        ArrayList<String> csv_reader = CsvReader.csv("Packlist_IGS_filtered");
 
         for (String e : csv_reader) {
             String [] split = e.split(",");
@@ -74,7 +74,6 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
             String[] splitedElement = e.split("\\.");
             String csvClassName = splitedElement[splitedElement.length - 1];
             if (class_file.equals(csvClassName)){
-
                 String [] methodName = spoonFormat(my_igs);
                 for (String f: appInfo.get(e)) {
                     if(methodName[0].equals(f.split("#")[0])){
@@ -101,42 +100,45 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
         // Get the root class
         CtClass root = invok.getParent(CtClass.class);
 
-        // Get the IGS or Setter
-        CtMethod method = (CtMethod) root.getMethodsByName(igsInvocationName).get(0);
+        // If the size is equal to 0 its possible that the method doesn't excite in the class or the root is not a class ex: Enum
+        if (root.getMethodsByName(igsInvocationName).size() > 0) {
 
-        if (isGetter){
-            // Filter to get the field of the getter/setter
-            method.getBody().getLastStatement().getElements(new AbstractFilter<CtReturn>(CtReturn.class) {
-                @Override
-                public boolean matches(CtReturn element) {
-                    getField = element.getReturnedExpression().toString();
-                    return super.matches(element);
-                }
-            });
+            // Get the IGS or Setter
+            CtMethod method = (CtMethod) root.getMethodsByName(igsInvocationName).get(0);
 
-            //Use Expression
-            CtExpression igsGetter = getFactory().Code().createCodeSnippetExpression(getField);
-            invok.replace(igsGetter);
-            isGetter = false;
-            getEnvironment().report(this, Level.WARN, invok, "INFO : GETTER on --> " + invok.getPosition());
+            if (isGetter) {
+                // Filter to get the field of the getter/setter
+                method.getBody().getLastStatement().getElements(new AbstractFilter<CtReturn>(CtReturn.class) {
+                    @Override
+                    public boolean matches(CtReturn element) {
+                        getField = element.getReturnedExpression().toString();
+                        return super.matches(element);
+                    }
+                });
+
+                //Use Expression
+                CtExpression igsGetter = getFactory().Code().createCodeSnippetExpression(getField);
+                invok.replace(igsGetter);
+                isGetter = false;
+                getEnvironment().report(this, Level.WARN, invok, "INFO : GETTER on --> " + invok.getPosition());
+            } else if (isSetter) {
+                // Filter to get the field of the getter/setter
+                method.getBody().getLastStatement().getElements(new AbstractFilter<CtAssignment>(CtAssignment.class) {
+                    @Override
+                    public boolean matches(CtAssignment element) {
+                        getField = element.getAssigned().toString();
+                        return super.matches(element);
+                    }
+                });
+
+                //Use CtStatement for code transformation
+                //TODO : change the string arg on "createCodeSnippetStatement" with a "CtAssignment" class
+                CtStatement igsSetter = getFactory().Code().createCodeSnippetStatement(getField + " = " + invok.getArguments().get(0));
+                invok.replace(igsSetter);
+                isSetter = false;
+                getEnvironment().report(this, Level.WARN, invok, "INFO : SETTER on --> " + invok.getPosition());
+            }
+
         }
-        else if(isSetter){
-            // Filter to get the field of the getter/setter
-            method.getBody().getLastStatement().getElements(new AbstractFilter<CtAssignment>(CtAssignment.class) {
-                @Override
-                public boolean matches(CtAssignment element) {
-                    getField = element.getAssignment().toString();
-                    return super.matches(element);
-                }
-            });
-
-            //Use CtStatement for code transformation
-            //TODO : change the string arg on "createCodeSnippetStatement" with a "CtAssignment" class
-            CtStatement igsSetter = getFactory().Code().createCodeSnippetStatement(getField + " = " + invok.getArguments().get(0));
-            invok.replace(igsSetter);
-            isSetter = false;
-            getEnvironment().report(this, Level.WARN, invok, "INFO : SETTER on --> " + invok.getPosition());
-        }
-
     }
 }

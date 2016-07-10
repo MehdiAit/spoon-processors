@@ -19,16 +19,17 @@ public class main {
         run.getEnvironment().setAutoImports(true);
 
         // Add processor
-        run.addProcessor(new MethodLogProcessorIGS());
-        run.addProcessor(new MethodLogProcessorMIM());
-        //run.addProcessor(new MethodLogProcessorHMU());
-        //run.addProcessor(new StaticProcessor());
-        //run.addProcessor(new InvokMethodProcessor());
-        //run.addProcessor(new HashMapProcessor());
+        // Log
+        //run.addProcessor(new MethodLogProcessorIGS("Packlist_IGS_filtered"));
+        //run.addProcessor(new MethodLogProcessorMIM("Packlist_MIM_filtered"));
+        //run.addProcessor(new MethodLogProcessorHMU("Packlist_HMU_filtered"));
+
+        // Corrections
+        run.addProcessor(new InvokMethodProcessor());
 
         // Source project
-        run.addInputResource("C:\\Users\\Twilibri\\Java\\org.bottiger.podcast_292_src\\app\\src\\main\\java\\org\\bottiger\\podcast");
-        //run.addInputResource("C:\\Users\\Twilibri\\Java\\org.telegram.messenger_7673_src\\TMessagesProj\\src\\main\\java\\org\\telegram\\messenger\\Animation");
+        //run.addInputResource("/home/antonin/Documents/internship/spoon/Packlist_Version/packlist/app/src/main/java");
+        run.addInputResource("/home/antonin/Documents/internship/spoon/Packlist_Version/packlist/app/src/main/groovy");
 
         //Process now
         run.run();
