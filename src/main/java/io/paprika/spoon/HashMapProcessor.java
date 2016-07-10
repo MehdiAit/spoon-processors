@@ -47,7 +47,12 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
         return checkValidToCsv(invok);
     }
 
-    public void process(CtMethod invok) {
+    public void process(CtMethod invok){
+        processAsign(invok);
+        processLocalVars(invok);
+    }
+
+    private void processAsign(CtMethod invok) {
         CtClass root = invok.getParent(CtClass.class);
 
         List<CtAssignment> list = invok.getBody().getElements(new AbstractFilter<CtAssignment>(CtAssignment.class) {
@@ -62,8 +67,6 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
                 return false;
             }
         });
-
-
 
         for (CtAssignment codeLine : list) {
 
@@ -83,13 +86,6 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
 
                 System.out.println("correction");
             }
-
-            /*
-            List<CtVariableReference> refs = codeLine.getAssigned().getReferences(new ReferenceTypeFilter<CtVariableReference>(CtVariableReference.class));
-            for(CtVariableReference ref : refs){
-                System.out.println(ref.toString());
-            }
-            */
 
             CtConstructorCall constr = (CtConstructorCall) codeLine.getAssignment();
             CtVariableRead arg;
@@ -120,8 +116,6 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
                                 )
                         );
                         codeLine.insertAfter(getFactory().Code().createCodeSnippetStatement(codeLine.getAssigned()+".putAll("+arg+")"));
-
-                        //root.getField("mValuesMap").replace(getFactory().Field().create(root.getField("mValuesMap")));
                     }
 
                     break;
@@ -139,31 +133,89 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
                     break;
             }
 
+            System.out.println("I found an HashMap in "+invok.getSimpleName());
+        }
+    }
 
-            //codeLine.getFactory().Code().createCodeSnippetExpression()
+    private void processLocalVars(CtMethod invok) {
+
+        List<CtLocalVariable> list = invok.getBody().getElements(new AbstractFilter<CtLocalVariable>(CtLocalVariable.class) {
+            @Override
+            public boolean matches(CtLocalVariable element) {
+                try {
+                    return (element.getAssignment().getType().getActualClass().equals(HashMap.class));
+                }
+                catch (SpoonClassNotFoundException e){
+                    System.err.println(e.getMessage());
+                }
+                return false;
+            }
+        });
+
+        for (CtLocalVariable codeLine : list) {
+
+            withAssignedCast = codeLine.getType().getActualClass().equals(HashMap.class);
+
+            if(withAssignedCast){
+
+                List<CtTypeReference<?>> types = codeLine.getType().getActualTypeArguments();
+
+                codeLine.setType(getFactory().Code().createCtTypeReference(ArrayMap.class));
+
+                codeLine.getType().setActualTypeArguments(types);
+
+                System.out.println("correction");
+            }
+
+            CtConstructorCall constr = (CtConstructorCall) codeLine.getAssignment();
+            CtVariableRead arg;
+
+            switch (constr.getArguments().size()){
+                case 0:
+                    codeLine.getAssignment().replace(
+                            getFactory().Code().createCodeSnippetExpression(
+                                    codeLine.getAssignment().toString().replaceFirst("HashMap","ArrayMap")
+                            )
+                    );
+                    break;
+                case 1:
+                    arg = (CtVariableRead)constr.getArguments().get(0);
+
+                    if(arg.getType().getActualClass().equals(HashSet.class)){
+                        constr.replace(
+                                getFactory().Code().createCodeSnippetExpression(
+                                        constr.toString().replaceFirst("HashMap","ArrayMap")
+                                )
+                        );
+                    }
+                    else {
+                        constr.removeArgument(arg);
+                        constr.replace(
+                                getFactory().Code().createCodeSnippetExpression(
+                                        constr.toString().replaceFirst("HashMap","ArrayMap")
+                                )
+                        );
+                        codeLine.insertAfter(getFactory().Code().createCodeSnippetStatement(codeLine.getSimpleName()+".putAll("+arg+")"));
+
+                    }
+
+                    break;
+                case 2:
+                    arg = (CtVariableRead)constr.getArguments().get(1);
+
+                    constr.removeArgument(arg);
+                    constr.replace(
+                            getFactory().Code().createCodeSnippetExpression(
+                                    constr.toString().replaceFirst("HashMap","ArrayMap")
+                            )
+                    );
+                    break;
+                default:
+                    break;
+            }
 
             System.out.println("I found an HashMap in "+invok.getSimpleName());
         }
-
-
-
-
-
-//        switch(useCase){
-//            case Normal:
-//                break;
-//            case OneParameterInt:
-//                break;
-//            case OneParameterMap:
-//                break;
-//            case TwoParameter:
-//                break;
-//            case Clone:
-//                break;
-//            default:
-//                break;
-//        }
-
     }
 
     private boolean checkValidToCsv(CtMethod candidate){
