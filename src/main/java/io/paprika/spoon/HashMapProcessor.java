@@ -29,10 +29,10 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
     private HashMapUsage useCase = HashMapUsage.Normal;
     private boolean withAssignedCast = false;
 
-    public HashMapProcessor(){
+    public HashMapProcessor(String file){
         System.out.println("Processor HashMapProcessor Start ... ");
         // Get applications information from the CSV - output
-        hmuOccurences = CsvReader.formatCsv("Telegram_HMU_filtered_valid");
+        hmuOccurences = CsvReader.formatCsv(file);
     }
 
     @Override

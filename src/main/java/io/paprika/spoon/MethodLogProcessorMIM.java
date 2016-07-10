@@ -17,11 +17,11 @@ import java.util.List;
 public class MethodLogProcessorMIM extends AbstractProcessor<CtMethod> {
     private HashSet<String> mimMethods;
 
-    public MethodLogProcessorMIM()
+    public MethodLogProcessorMIM(String file)
     {
         System.out.println("Processor MethodLogProcessorMIM Start ... ");
         // Get applications information from the CSV - output
-        mimMethods = CsvReader.formatCsv("Soundwaves_MIM_filtered_valid");
+        mimMethods = CsvReader.formatCsv(file);
     }
 
     @Override
