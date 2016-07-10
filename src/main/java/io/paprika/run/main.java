@@ -11,10 +11,9 @@ import java.util.Map;
  */
 public class main {
     public static void main(String[] args) throws Exception {
-        Map<String,String> csvFiles = new HashMap<>();
-        csvFiles.put("HMU","osmand_HMU_filtered");
-        csvFiles.put("MIM","osmand_MIM_filtered");
-        csvFiles.put("IGS","osmand_IGS_filtered");
+        final String HMU = "osmand_HMU_filtered";
+        final String IGS = "osmand_IGS_filtered";
+        final String MIM = "osmand_MIM_filtered";
 
 
         Launcher run = new Launcher();
@@ -28,12 +27,12 @@ public class main {
         run.getEnvironment().setAutoImports(true);
 
         // Add processor
-        //run.addProcessor(new MethodLogProcessorIGS(csvFiles.get("IGS")));
-        //run.addProcessor(new MethodLogProcessorMIM(csvFiles.get("MIM")));
-        run.addProcessor(new MethodLogProcessorHMU(csvFiles.get("HMU")));
-        //run.addProcessor(new StaticProcessor(csvFiles.get("MIM")));
-        //run.addProcessor(new InvokMethodProcessor(csvFiles.get("IGS")));
-        run.addProcessor(new HashMapProcessor(csvFiles.get("HMU")));
+        //run.addProcessor(new MethodLogProcessorIGS(IGS));
+        //run.addProcessor(new MethodLogProcessorMIM(MIM));
+        run.addProcessor(new MethodLogProcessorHMU(HMU));
+        //run.addProcessor(new StaticProcessor(MIM));
+        //run.addProcessor(new InvokMethodProcessor(IGS));
+        run.addProcessor(new HashMapProcessor(HMU));
 
         // Source project
         run.addInputResource("C:\\Users\\Twilibri\\Java\\net.osmand.plus_235_src\\android\\OsmAnd-java\\src\\net\\osmand");
