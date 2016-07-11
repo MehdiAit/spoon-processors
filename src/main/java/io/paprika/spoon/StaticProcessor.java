@@ -20,11 +20,11 @@ public class StaticProcessor extends AbstractProcessor<CtMethod> {
 
     HashSet<String> meth_toStatic;
 
-    public StaticProcessor()
+    public StaticProcessor(String file)
     {
         System.out.println("Processor StaticProcessor Start ... ");
         // Get applications information from the CSV - output
-        meth_toStatic = CsvReader.formatCsv("Soundwaves_MIM_filtered_valid");
+        meth_toStatic = CsvReader.formatCsv(file);
     }
 
     @Override

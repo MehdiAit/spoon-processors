@@ -8,6 +8,11 @@ import io.paprika.spoon.*;
  */
 public class main {
     public static void main(String[] args) throws Exception {
+        final String HMU = "osmand_HMU_filtered";
+        final String IGS = "osmand_IGS_filtered";
+        final String MIM = "osmand_MIM_filtered";
+
+
         Launcher run = new Launcher();
         //
         //If we got all sources compiled, we can remove this options.
@@ -20,16 +25,18 @@ public class main {
 
         // Add processor
         // Log
-        //run.addProcessor(new MethodLogProcessorIGS("Packlist_IGS_filtered"));
-        //run.addProcessor(new MethodLogProcessorMIM("Packlist_MIM_filtered"));
-        //run.addProcessor(new MethodLogProcessorHMU("Packlist_HMU_filtered"));
+        run.addProcessor(new MethodLogProcessorIGS(IGS));
+        run.addProcessor(new MethodLogProcessorMIM(MIM));
+        run.addProcessor(new MethodLogProcessorHMU(HMU));
 
-        // Corrections
-        run.addProcessor(new InvokMethodProcessor());
+        // Correction
+        run.addProcessor(new StaticProcessor(MIM));
+        run.addProcessor(new InvokMethodProcessor(IGS));
+        run.addProcessor(new HashMapProcessor(HMU));
 
         // Source project
-        //run.addInputResource("/home/antonin/Documents/internship/spoon/Packlist_Version/packlist/app/src/main/java");
-        run.addInputResource("/home/antonin/Documents/internship/spoon/Packlist_Version/packlist/app/src/main/groovy");
+        run.addInputResource("C:\\Users\\Twilibri\\Java\\net.osmand.plus_235_src\\android\\OsmAnd-java\\src\\net\\osmand");
+        //run.addInputResource("C:\\Users\\Twilibri\\Java\\org.telegram.messenger_7673_src\\TMessagesProj\\src\\main\\java\\org\\telegram\\messenger\\Animation");
 
         //Process now
         run.run();
