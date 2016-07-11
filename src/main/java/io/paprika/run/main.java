@@ -24,11 +24,14 @@ public class main {
         run.getEnvironment().setAutoImports(true);
 
         // Add processor
-        //run.addProcessor(new MethodLogProcessorIGS(IGS));
-        //run.addProcessor(new MethodLogProcessorMIM(MIM));
+        // Log
+        run.addProcessor(new MethodLogProcessorIGS(IGS));
+        run.addProcessor(new MethodLogProcessorMIM(MIM));
         run.addProcessor(new MethodLogProcessorHMU(HMU));
-        //run.addProcessor(new StaticProcessor(MIM));
-        //run.addProcessor(new InvokMethodProcessor(IGS));
+
+        // Correction
+        run.addProcessor(new StaticProcessor(MIM));
+        run.addProcessor(new InvokMethodProcessor(IGS));
         run.addProcessor(new HashMapProcessor(HMU));
 
         // Source project
