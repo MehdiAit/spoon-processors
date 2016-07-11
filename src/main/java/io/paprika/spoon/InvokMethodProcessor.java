@@ -18,7 +18,6 @@ import java.util.HashMap;
 public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
     // Application name and methods invocation
     private HashMap<String, ArrayList<String>> appInfo;
-    private ArrayList<String> igsName;
     // is it a getter or setter
     private boolean isGetter = false;
     private boolean isSetter = false;
@@ -39,15 +38,22 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
     // Format the Csv output to get the IGS invocation and position
     private void formatCsv(String file){
         appInfo = new HashMap<>();
-        igsName = new ArrayList<>();
         ArrayList<String> csv_reader = CsvReader.csv(file);
 
         for (String e : csv_reader) {
             String [] split = e.split(",");
             // 0, App key (name) - 1, Where the IGS has been invoked - 2, The IGS invoked
-            igsName.add(split[2]);
-            // Rewrites on the same key until it changes
-            appInfo.put(split[1], igsName);
+            String where = split[1];
+            String who = split[2];
+
+            if(appInfo.containsKey(where)){
+                appInfo.get(where).add(who);
+            }
+            else{
+                ArrayList<String> tmp = new ArrayList<>();
+                tmp.add(who);
+                appInfo.put(where, tmp);
+            }
         }
     }
 
@@ -69,10 +75,13 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
 
         // Get the file class name
         String class_file = invok.getPosition().getFile().getName().split("\\.")[0];
+        String [] tmp = my_igs.split("#")[0].split("\\.");
+        class_file = tmp[tmp.length-1];
 
         for (String e: appInfo.keySet()) {
             String[] splitedElement = e.split("\\.");
             String csvClassName = splitedElement[splitedElement.length - 1];
+
             if (class_file.equals(csvClassName)){
                 String [] methodName = spoonFormat(my_igs);
                 for (String f: appInfo.get(e)) {
@@ -106,6 +115,11 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
             // Get the IGS or Setter
             CtMethod method = (CtMethod) root.getMethodsByName(igsInvocationName).get(0);
 
+            if (method.getBody().getStatements().size() > 1){
+                System.err.println(getField + " is calling a non simple method ("+igsInvocationName+" with a size of "+method.getBody().getStatements().size()+") at "+invok.getPosition());
+                return;
+            }
+
             if (isGetter) {
                 // Filter to get the field of the getter/setter
                 method.getBody().getLastStatement().getElements(new AbstractFilter<CtReturn>(CtReturn.class) {
@@ -117,8 +131,13 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
                 });
 
                 //Use Expression
-                CtExpression igsGetter = getFactory().Code().createCodeSnippetExpression(getField);
-                invok.replace(igsGetter);
+                try{
+                    CtExpression igsGetter = getFactory().Code().createCodeSnippetExpression(getField);
+                    invok.replace(igsGetter);
+                }
+                catch (Exception e){
+                    System.err.println(getField + " is false getter ("+igsInvocationName+" with a size of "+method.getBody().getStatements().size()+") at "+invok.getPosition());
+                }
                 isGetter = false;
                 getEnvironment().report(this, Level.WARN, invok, "INFO : GETTER on --> " + invok.getPosition());
             } else if (isSetter) {
@@ -133,12 +152,19 @@ public class InvokMethodProcessor extends AbstractProcessor<CtInvocation> {
 
                 //Use CtStatement for code transformation
                 //TODO : change the string arg on "createCodeSnippetStatement" with a "CtAssignment" class
-                CtStatement igsSetter = getFactory().Code().createCodeSnippetStatement(getField + " = " + invok.getArguments().get(0));
-                invok.replace(igsSetter);
+                try{
+                    CtStatement igsSetter = getFactory().Code().createCodeSnippetStatement(getField + " = " + invok.getArguments().get(0));
+                    invok.replace(igsSetter);
+                }
+                catch (Exception e){
+                    System.err.println(getField + " is false setter ("+igsInvocationName+" with a size of "+method.getBody().getStatements().size()+") at "+invok.getPosition());
+                }
+
                 isSetter = false;
                 getEnvironment().report(this, Level.WARN, invok, "INFO : SETTER on --> " + invok.getPosition());
             }
 
         }
     }
+
 }
