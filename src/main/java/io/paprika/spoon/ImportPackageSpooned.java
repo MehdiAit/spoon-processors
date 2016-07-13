@@ -24,7 +24,6 @@ public class ImportPackageSpooned extends AbstractProcessor<CtClass>{
     @Override
     public void process(CtClass element) {
         String [] filePath = element.getQualifiedName().split("\\$");
-
         if(filePath.length > 1){
             return;
         }
@@ -32,16 +31,31 @@ public class ImportPackageSpooned extends AbstractProcessor<CtClass>{
         if (getImport.containsKey(filePath[0])){
             ArrayList<String> classImport = getImport.get(filePath[0]);
             ArrayList<String> classFile = new ArrayList<>();
+            String packageName = "";
             count++;
-            try {
 
+            try {
                 BufferedReader readFile = new BufferedReader(new FileReader(element.getPosition().getFile()));
                 String line = "";
                 while ((line = readFile.readLine()) != null){
                     classFile.add(line);
                 }
 
+                ArrayList<String> classFileTmp = new ArrayList<>(classFile);
+                for (String p : classFileTmp)
+                {
+                    if(p.matches("package.*")){
+                        packageName = p;
+                        classFile.remove(classFile.indexOf(p));
+                    }
+                }
+
                 BufferedWriter writer = new BufferedWriter(new FileWriter(element.getPosition().getFile()));
+
+                // Write the package name
+                writer.write(packageName);
+                writer.newLine();
+
                 for(String s : classImport)
                 {
                     writer.write(s);
