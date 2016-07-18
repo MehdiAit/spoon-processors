@@ -48,11 +48,11 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
     }
 
     public void process(CtMethod invok){
-        processAsign(invok);
+        processAssign(invok);
         processLocalVars(invok);
     }
 
-    private void processAsign(CtMethod invok) {
+    private void processAssign(CtMethod invok) {
         CtClass root = invok.getParent(CtClass.class);
 
         List<CtAssignment> list = invok.getBody().getElements(new AbstractFilter<CtAssignment>(CtAssignment.class) {
@@ -72,7 +72,12 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
 
             CtFieldWrite assigned = (CtFieldWrite) codeLine.getAssigned();
 
-            withAssignedCast = root.getField(assigned.getVariable().toString()).getType().getActualClass().equals(HashMap.class);
+            try {
+                withAssignedCast = root.getField(assigned.getVariable().toString()).getType().getActualClass().equals(HashMap.class);
+            }
+            catch (NullPointerException e){
+                return;
+            }
 
             if(withAssignedCast){
                 CtField attribute = root.getField(assigned.getVariable().toString());
@@ -87,8 +92,16 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
                 System.out.println("correction");
             }
 
-            CtConstructorCall constr = (CtConstructorCall) codeLine.getAssignment();
+
+            CtConstructorCall constr;
             CtVariableRead arg;
+            try{
+                constr = (CtConstructorCall) codeLine.getAssignment();
+            }
+            catch (ClassCastException e){
+                return;
+            }
+
 
             switch (constr.getArguments().size()){
                 case 0:
@@ -145,7 +158,7 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
                 try {
                     return (element.getAssignment().getType().getActualClass().equals(HashMap.class));
                 }
-                catch (SpoonClassNotFoundException e){
+                catch (SpoonClassNotFoundException | NullPointerException e){
                     System.err.println(e.getMessage());
                 }
                 return false;
@@ -179,7 +192,12 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
                     );
                     break;
                 case 1:
-                    arg = (CtVariableRead)constr.getArguments().get(0);
+                    try {
+                        arg = (CtVariableRead)constr.getArguments().get(0);
+                    }
+                    catch (ClassCastException e){
+                        return;
+                    }
 
                     if(arg.getType().getActualClass().equals(HashSet.class)){
                         constr.replace(
