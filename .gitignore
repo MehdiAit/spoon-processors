@@ -4,6 +4,8 @@ spooned
 out
 local.properties
 pom.xml
+csv
+App_Spooned
 
 ### Java template
 *.class
