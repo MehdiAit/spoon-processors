@@ -65,8 +65,10 @@ public class ImportPackageSpooned extends AbstractProcessor<CtType>{
 
                     // Re-Write the file
                     for (String s : classFile) {
-                        writer.write(s);
-                        writer.newLine();
+                        if (!s.matches("import.*")){
+                            writer.write(s);
+                            writer.newLine();
+                        }
                     }
 
                     writer.close();
