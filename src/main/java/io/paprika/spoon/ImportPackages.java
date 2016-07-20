@@ -63,7 +63,7 @@ public class ImportPackages extends AbstractProcessor<CtType> {
         runImport.getEnvironment().setAutoImports(true);
 
         runImport.addProcessor(new ImportPackageSpooned(appImport));
-        runImport.addInputResource("C:\\Users\\Twilibri\\Documents\\GitHub\\spoon-processors\\App_Spooned\\org\\bottiger\\podcast");
+        runImport.addInputResource("/home/antonin/Documents/internship/spoon/paprika-spoon-processors/App_Spooned");
 
         runImport.run();
         System.out.println("End Import processor");

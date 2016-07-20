@@ -39,6 +39,7 @@ public class MethodLogProcessorIGS extends AbstractProcessor<CtMethod> {
 
 
         for(String occurence : igsInvocation){
+
             String csvClassName = occurence.substring(occurence.lastIndexOf(".")+1);
 
             if(class_file.equals(csvClassName) &&
@@ -51,6 +52,7 @@ public class MethodLogProcessorIGS extends AbstractProcessor<CtMethod> {
     }
 
     public void process(CtMethod element) {
+
         CtStatement logMethod = getFactory().Code().createCodeSnippetStatement("android.util.Log.d(\"SMELL\",\"IGS\")");
 
         try{
