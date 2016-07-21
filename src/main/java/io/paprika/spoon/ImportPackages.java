@@ -58,12 +58,13 @@ public class ImportPackages extends AbstractProcessor<CtType> {
         System.out.println(count);
         Launcher runImport = new Launcher();
 
-        runImport.getEnvironment().setNoClasspath(true);
+
         runImport.getEnvironment().setShouldCompile(false);
-        runImport.getEnvironment().setAutoImports(true);
+        runImport.getEnvironment().setAutoImports(false);
 
         runImport.addProcessor(new ImportPackageSpooned(appImport));
-        runImport.addInputResource("/home/antonin/Documents/internship/spoon/paprika-spoon-processors/App_Spooned");
+        runImport.addInputResource("The source project");
+        runImport.getEnvironment().setNoClasspath(true);
 
         runImport.run();
         System.out.println("End Import processor");

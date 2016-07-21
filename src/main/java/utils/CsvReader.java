@@ -43,4 +43,16 @@ public class CsvReader {
         return toFill;
     }
 
+    public static HashSet<String> formatCsvHahs(String file_name){
+        HashSet<String> toFill = new HashSet<>();
+
+        ArrayList<String> csv_reader = CsvReader.csv(file_name);
+        for (String e : csv_reader) {
+            String [] split = e.split(",");
+            String [] splitHash = split[1].split("#");
+            toFill.add(splitHash[1]);
+        }
+        return toFill;
+    }
+
 }
