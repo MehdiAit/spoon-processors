@@ -17,9 +17,9 @@ import java.util.*;
  *
  * HMU Handler
  */
-public class SimpleHashMapProcessor extends AbstractProcessor<CtClass> {
+public class SimpleHashMapProcessor extends AbstractProcessor<CtClass<?>> {
 
-    public SimpleHashMapProcessor(String file){
+    public SimpleHashMapProcessor(){
         System.out.println("Processor HashMapProcessor Start ... ");
     }
 
@@ -30,18 +30,65 @@ public class SimpleHashMapProcessor extends AbstractProcessor<CtClass> {
      * @return is present or not ?
      */
     @Override
-    public boolean isToBeProcessed(CtClass invok) {
+    public boolean isToBeProcessed(CtClass<?> invok) {
         return true;
     }
 
-    public void process(CtClass invok){
-        List<CtType> list = invok.getElements(new AbstractFilter<CtType>(CtType.class) {
+    public void process(CtClass<?> ctClass){
+        List<CtConstructorCall<?>> listConstrCall = ctClass.getElements(new AbstractFilter<CtConstructorCall<?>>(CtConstructorCall.class) {
             @Override
-            public boolean matches(CtType element) {
+            public boolean matches(CtConstructorCall<?> element) {
+                return element.getType().getSimpleName().equals("HashMap");
+            }
+        });
+
+        // Ignore cases with just HashMap to ArrayMap conversion, the next list will do it anyway.
+        for (CtConstructorCall<?> constructorCall : listConstrCall){
+            convertConstructor(constructorCall);
+        }
+
+        List<CtTypeReference<?>> listTypeRefs = ctClass.getElements(new AbstractFilter<CtTypeReference<?>>(CtTypeReference.class) {
+            @Override
+            public boolean matches(CtTypeReference<?> element) {
                 return element.getSimpleName().equals("HashMap");
             }
         });
 
-        System.out.println(list.size());
+        for (CtTypeReference<?> typeRef : listTypeRefs){
+            HashMapToArrayMap(typeRef);
+        }
+    }
+
+    private void convertConstructor(CtConstructorCall<?> constructorCall){
+        CtExpression arg;
+
+        switch (constructorCall.getArguments().size()){
+            case 1:
+                arg = constructorCall.getArguments().get(0) instanceof CtLiteral ?
+                        (CtLiteral)constructorCall.getArguments().get(0) :
+                        (CtVariableRead)constructorCall.getArguments().get(0);
+
+                if (!arg.getType().getSimpleName().equals("HashMap")) {
+                    constructorCall.removeArgument(arg);
+                    constructorCall.insertAfter(getFactory().Code().createCodeSnippetStatement(
+                            constructorCall.getParent(CtAssignment.class).getAssigned()+".putAll("+arg+")")
+                    );
+
+                }
+
+                break;
+            case 2:
+                arg = (CtVariableRead)constructorCall.getArguments().get(1);
+                constructorCall.removeArgument(arg);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void HashMapToArrayMap(CtTypeReference<?> ref){
+        List<CtTypeReference<?>> types = ref.getActualTypeArguments();
+        ref.replace(getFactory().Code().createCtTypeReference(ArrayMap.class));
+        ref.setActualTypeArguments(types);
     }
 }
