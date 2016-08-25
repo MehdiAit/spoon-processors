@@ -23,6 +23,7 @@ public class HashMapProcessor extends AbstractProcessor<CtClass<?>> {
     private Map<String, List<String>> modifiedVariables = new HashMap<>();
     private List<String> modifiedFields = new ArrayList<>();
     private Map<String, List<String>> waitingMethods = new HashMap<>();
+    private Map<String, CtClass> previousClasses = new HashMap<>();
 
     public HashMapProcessor(String file){
         System.out.println("Processor HashMapProcessor Start ... ");
@@ -50,6 +51,9 @@ public class HashMapProcessor extends AbstractProcessor<CtClass<?>> {
      * @param invok the class analyzed
      */
     public void process(CtClass<?> invok){
+        // Store the class for later use
+        this.previousClasses.put(invok.getSimpleName(), invok);
+
         // Clear last class consequences
         this.modifiedVariables.clear();
         this.modifiedFields.clear();
@@ -314,6 +318,17 @@ public class HashMapProcessor extends AbstractProcessor<CtClass<?>> {
             truc = call.getExecutableDeclaration().getBody();
         }
         catch (SpoonClassNotFoundException e){
+            // Seek in the previous classes analyzed
+            if(previousClasses.containsKey(call.getDeclaringType().getSimpleName())){
+                CtClass<?> prevClass = previousClasses.get(call.getDeclaringType().getSimpleName());
+                for (CtMethod<?> method : prevClass.getAllMethods()){
+                    if(method.getSimpleName().equals(call.getSimpleName())){
+                        modifySubMethods(method);
+                    }
+                }
+                return;
+            }
+
             // Wait for Spoon to analyze this custom class
             if(waitingMethods.get(call.getDeclaringType().getSimpleName()) == null){
                 waitingMethods.put(call.getDeclaringType().getSimpleName(), new ArrayList<String>());

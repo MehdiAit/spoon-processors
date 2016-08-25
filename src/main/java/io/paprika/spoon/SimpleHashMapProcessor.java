@@ -64,16 +64,30 @@ public class SimpleHashMapProcessor extends AbstractProcessor<CtClass<?>> {
 
         switch (constructorCall.getArguments().size()){
             case 1:
-                arg = constructorCall.getArguments().get(0) instanceof CtLiteral ?
-                        (CtLiteral)constructorCall.getArguments().get(0) :
-                        (CtVariableRead)constructorCall.getArguments().get(0);
+                /*
+                try{
+                    if(constructorCall.getArguments().get(0) instanceof CtLiteral){
+                        arg = (CtLiteral)constructorCall.getArguments().get(0);
+                    }
+                    else if(constructorCall.getArguments().get(0) instanceof CtInvocation){
+                        arg = (CtInvocation)constructorCall.getArguments().get(0);
+                    }
+                    else{
+                        arg = (CtVariableRead)constructorCall.getArguments().get(0);
+                    }
+                }
+                catch (ClassCastException e){
+                    System.err.println(e.getMessage()+"\n"+constructorCall);
+                    return;
+                }
+                */
+                arg = constructorCall.getArguments().get(0);
 
-                if (!arg.getType().getSimpleName().equals("HashMap")) {
+                if (arg.getType().getSimpleName().equals("HashMap")) {
                     constructorCall.removeArgument(arg);
                     constructorCall.insertAfter(getFactory().Code().createCodeSnippetStatement(
                             constructorCall.getParent(CtAssignment.class).getAssigned()+".putAll("+arg+")")
                     );
-
                 }
 
                 break;
