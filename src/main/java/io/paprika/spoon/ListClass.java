@@ -51,13 +51,13 @@ public class ListClass extends AbstractProcessor<CtClass> {
         HashSet<String> tmp;
 
         if(!isAll){
-            tmp = new HashSet<>(CsvReader.formatCsvHahs(appName+"_"+smellName+"_filtered"));
+            tmp = new HashSet<>(CsvReader.formatCsvHahs(appName+"_"+smellName));
             return tmp;
         }else
         {
-            tmp = new HashSet<>(CsvReader.formatCsvHahs(appName+"_IGS_filtered"));
-            tmp.addAll(CsvReader.formatCsvHahs(appName+"_MIM_filtered"));
-            tmp.addAll(CsvReader.formatCsvHahs(appName+"_HMU_filtered"));
+            tmp = new HashSet<>(CsvReader.formatCsvHahs(appName+"_IGS"));
+            tmp.addAll(CsvReader.formatCsvHahs(appName+"_MIM"));
+            tmp.addAll(CsvReader.formatCsvHahs(appName+"_HMU"));
             return tmp;
         }
     }

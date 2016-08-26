@@ -1,33 +1,29 @@
 package io.paprika.spoon;
 
 import android.util.ArrayMap;
-import org.apache.log4j.Level;
 import spoon.processing.AbstractProcessor;
 import spoon.reflect.code.*;
 import spoon.reflect.declaration.*;
-import spoon.reflect.reference.CtTypeReference;
-import spoon.reflect.reference.CtVariableReference;
+import spoon.reflect.reference.*;
 import spoon.reflect.visitor.filter.AbstractFilter;
-import spoon.reflect.visitor.filter.ReferenceTypeFilter;
-import spoon.reflect.visitor.filter.RegexFilter;
-import spoon.reflect.visitor.filter.TypeFilter;
-import spoon.support.reflect.code.CtConstructorCallImpl;
 import spoon.support.reflect.reference.SpoonClassNotFoundException;
 import utils.CsvReader;
 
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by kevin on 01/07/16
  *
  * HMU Handler
  */
-public class HashMapProcessor extends AbstractProcessor<CtMethod> {
+public class HashMapProcessor extends AbstractProcessor<CtClass<?>> {
 
-    private HashSet<String> hmuOccurences;
-    private HashMapUsage useCase = HashMapUsage.Normal;
+    private Set<String> hmuOccurences;
     private boolean withAssignedCast = false;
+    private Map<String, List<String>> modifiedVariables = new HashMap<>();
+    private List<String> modifiedFields = new ArrayList<>();
+    private Map<String, List<String>> waitingMethods = new HashMap<>();
+    private Map<String, CtClass> previousClasses = new HashMap<>();
 
     public HashMapProcessor(String file){
         System.out.println("Processor HashMapProcessor Start ... ");
@@ -35,36 +31,86 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
         hmuOccurences = CsvReader.formatCsv(file);
     }
 
+    /**
+     * As the checks are both on the class and its methods, it would be redundant to check anything here
+     *
+     * @param invok a method of a class
+     * @return True
+     */
     @Override
-    public boolean isToBeProcessed(CtMethod invok) {
-
-        // Get applications information from the CSV - output
-        //formatCsv();
-
-        // Get the method name + parameters
-        //String[] call = invok.getReference().toString().split("#")[1].split("\\(|\\)");
-
-        return checkValidToCsv(invok);
+    public boolean isToBeProcessed(CtClass<?> invok) {
+        return true;
     }
 
-    public void process(CtMethod invok){
-        processAssign(invok);
-        processLocalVars(invok);
+    /**
+     * Process the class in 3 steps :
+     * 1 - Correct its methods which contains HMU and keep the modified variables
+     * 2 - Iterate over every method of that class to find occurences of invocation having one of the modified variables as argument
+     * 3 - Correct the methods behind those invocations
+     *
+     * @param invok the class analyzed
+     */
+    public void process(CtClass<?> invok){
+        // Store the class for later use
+        this.previousClasses.put(invok.getSimpleName(), invok);
+
+        // Clear last class consequences
+        this.modifiedVariables.clear();
+        this.modifiedFields.clear();
+
+        // Do trivial changes
+        for (CtMethod<?> method : invok.getAllMethods()){
+            this.modifiedVariables.put(method.getSimpleName(), new ArrayList<String>());
+
+            // Keep modified local vars and class attributes (fields)
+            if(checkValidToCsv(method)){
+                processFields(method);
+                processLocalVars(method);
+            }
+        }
+
+        // Find consequences of those changes
+        for (CtMethod<?> method : invok.getAllMethods()){
+            if(this.modifiedVariables.get(method.getSimpleName()).size() + this.modifiedFields.size() > 0){
+                analyzeConsequences(method);
+            }
+
+
+            // Do waiting job for this method if it exists
+            // TODO : Does not work if the concerned class was analyzed before the submethod use was found.
+            if (waitingMethods.get(invok.getSimpleName()) != null
+                    && waitingMethods.get(invok.getSimpleName()).size() > 0){
+                if(waitingMethods.get(invok.getSimpleName()).contains(method.getSimpleName())){
+                    modifySubMethods(method);
+
+                    // Clear job done
+                    waitingMethods.get(invok.getSimpleName()).remove(method.getSimpleName());
+                }
+            }
+
+        }
     }
 
-    private void processAssign(CtMethod invok) {
+    /**
+     * Transforms HMU that are assigned to class fields (attributes)
+     *
+     * @param invok
+     */
+    private void processFields(CtMethod invok) {
         CtClass root = invok.getParent(CtClass.class);
 
         List<CtAssignment> list = invok.getBody().getElements(new AbstractFilter<CtAssignment>(CtAssignment.class) {
             @Override
             public boolean matches(CtAssignment element) {
                 try {
-                    return (element.getAssignment().getType().getActualClass().equals(HashMap.class));
+                    // Finds any Assignment where the dynamic element is a Constructor for an HashMap and the static one is a Field
+                    return (element.getAssignment().getType().getSimpleName().equals("HashMap") &&
+                            (element.getAssignment() instanceof  CtConstructorCall)) &&
+                            (element.getAssigned() instanceof CtFieldWrite);
                 }
-                catch (SpoonClassNotFoundException e){
-                    System.err.println(e.getMessage());
+                catch (NullPointerException e){
+                    return false;
                 }
-                return false;
             }
         });
 
@@ -72,12 +118,10 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
 
             CtFieldWrite assigned = (CtFieldWrite) codeLine.getAssigned();
 
-            try {
-                withAssignedCast = root.getField(assigned.getVariable().toString()).getType().getActualClass().equals(HashMap.class);
-            }
-            catch (NullPointerException e){
-                return;
-            }
+            // Add to array of modified variables
+            this.modifiedFields.add(assigned.getVariable().toString());
+
+            withAssignedCast = root.getField(assigned.getVariable().toString()).getType().getActualClass().equals(HashMap.class);
 
             if(withAssignedCast){
                 CtField attribute = root.getField(assigned.getVariable().toString());
@@ -87,20 +131,11 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
                 attribute.setType(getFactory().Code().createCtTypeReference(ArrayMap.class));
 
                 attribute.getType().setActualTypeArguments(types);
-
-
-                System.out.println("correction");
             }
 
 
-            CtConstructorCall constr;
-            CtVariableRead arg;
-            try{
-                constr = (CtConstructorCall) codeLine.getAssignment();
-            }
-            catch (ClassCastException e){
-                return;
-            }
+            CtConstructorCall constr = (CtConstructorCall) codeLine.getAssignment();
+            CtExpression arg = null;
 
 
             switch (constr.getArguments().size()){
@@ -112,16 +147,12 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
                     );
                     break;
                 case 1:
-                    arg = (CtVariableRead)constr.getArguments().get(0);
+                    arg = constr.getArguments().get(0) instanceof CtLiteral ?
+                            (CtLiteral)constr.getArguments().get(0) :
+                            (CtVariableRead)constr.getArguments().get(0);
 
-                    if(arg.getType().getActualClass().equals(HashSet.class)){
-                        constr.replace(
-                                getFactory().Code().createCodeSnippetExpression(
-                                        constr.toString().replaceFirst("HashMap","ArrayMap")
-                                )
-                        );
-                    }
-                    else {
+                    if(arg.getType().getActualClass().equals(HashMap.class) ||
+                            arg.getType().getActualClass().equals(Map.class)){
                         constr.removeArgument(arg);
                         constr.replace(
                                 getFactory().Code().createCodeSnippetExpression(
@@ -130,12 +161,22 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
                         );
                         codeLine.insertAfter(getFactory().Code().createCodeSnippetStatement(codeLine.getAssigned()+".putAll("+arg+")"));
                     }
+                    else if (arg.getType().getActualClass().equals(Integer.class) ||
+                            arg.getType().getSimpleName().equals("int")){
+                        constr.replace(
+                                getFactory().Code().createCodeSnippetExpression(
+                                        constr.toString().replaceFirst("HashMap","ArrayMap")
+                                )
+                        );
+                    }
+                    else{
+                        System.err.println("HMU case not handled");
+                        System.err.println(codeLine);
+                    }
 
                     break;
                 case 2:
-                    arg = (CtVariableRead)constr.getArguments().get(1);
-
-                    constr.removeArgument(arg);
+                    constr.removeArgument((CtExpression) constr.getArguments().get(1));
                     constr.replace(
                             getFactory().Code().createCodeSnippetExpression(
                                     constr.toString().replaceFirst("HashMap","ArrayMap")
@@ -145,28 +186,36 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
                 default:
                     break;
             }
-
-            System.out.println("I found an HashMap in "+invok.getSimpleName());
         }
     }
 
+    /**
+     * Transforms HMU that are assigned to a local variable of the method
+     *
+     * @param invok
+     */
     private void processLocalVars(CtMethod invok) {
 
         List<CtLocalVariable> list = invok.getBody().getElements(new AbstractFilter<CtLocalVariable>(CtLocalVariable.class) {
             @Override
             public boolean matches(CtLocalVariable element) {
                 try {
-                    return (element.getAssignment().getType().getActualClass().equals(HashMap.class));
+
+                    return (element.getAssignment().getType().getSimpleName().equals("HashMap") &&
+                            (element.getAssignment() instanceof  CtConstructorCall));
                 }
-                catch (SpoonClassNotFoundException | NullPointerException e){
-                    System.err.println(e.getMessage());
+                catch (NullPointerException e){
+                    return false;
                 }
-                return false;
             }
         });
 
         for (CtLocalVariable codeLine : list) {
 
+            // Add to array of modified variables
+            this.modifiedVariables.get(invok.getSimpleName()).add(codeLine.getReference().toString());
+
+            // Checks if the variable declaration has to be changed
             withAssignedCast = codeLine.getType().getActualClass().equals(HashMap.class);
 
             if(withAssignedCast){
@@ -176,11 +225,9 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
                 codeLine.setType(getFactory().Code().createCtTypeReference(ArrayMap.class));
 
                 codeLine.getType().setActualTypeArguments(types);
-
-                System.out.println("correction");
             }
 
-            CtConstructorCall constr = (CtConstructorCall) codeLine.getAssignment();
+            CtConstructorCall<?> constr = (CtConstructorCall) codeLine.getAssignment();
             CtVariableRead arg;
 
             switch (constr.getArguments().size()){
@@ -231,11 +278,138 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
                 default:
                     break;
             }
-
-            System.out.println("I found an HashMap in "+invok.getSimpleName());
         }
     }
 
+    /**
+     * Finds the consequences (methods of other class to modify) of the previous transformations
+     *
+     * @param invok
+     */
+    private void analyzeConsequences(final CtMethod invok){
+        final List<String> localVars = modifiedVariables.get(invok.getSimpleName());
+
+        List<CtInvocation<?>> list = invok.getBody().getElements(new AbstractFilter<CtInvocation<?>>(CtInvocation.class) {
+            @Override
+            public boolean matches(CtInvocation<?> element) {
+                for(CtElement arg : element.getArguments()){
+                    if(localVars.contains(arg.toString()) || modifiedFields.contains(arg.toString())){
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
+
+        for (CtInvocation subMethod : list){
+            analyzeSubMethods(subMethod.getExecutable());
+        }
+    }
+
+    /**
+     * Check if it is possible to modify the method now and modify it if so
+     *
+     * @param call the method being called
+     */
+    private void analyzeSubMethods(CtExecutableReference call){
+        CtBlock truc;
+        try{
+            // If it is a custom class : step into the call to modify the method
+            truc = call.getExecutableDeclaration().getBody();
+        }
+        catch (SpoonClassNotFoundException e){
+            // Seek in the previous classes analyzed
+            if(previousClasses.containsKey(call.getDeclaringType().getSimpleName())){
+                CtClass<?> prevClass = previousClasses.get(call.getDeclaringType().getSimpleName());
+                for (CtMethod<?> method : prevClass.getAllMethods()){
+                    if(method.getSimpleName().equals(call.getSimpleName())){
+                        modifySubMethods(method);
+                    }
+                }
+                return;
+            }
+
+            // Wait for Spoon to analyze this custom class
+            if(waitingMethods.get(call.getDeclaringType().getSimpleName()) == null){
+                waitingMethods.put(call.getDeclaringType().getSimpleName(), new ArrayList<String>());
+            }
+
+            waitingMethods.get(call.getDeclaringType().getSimpleName()).add(call.getSimpleName());
+
+            System.err.println("Class temporarily unavailable (waiting Spoon AST) : " + call.getDeclaringType().getSimpleName()
+                    +"\n"+ call);
+            return;
+        }
+
+        if (truc == null){
+            // If the declaring type is a Collection : find the variable and change its type arguments
+            System.err.println("Java defined class : " + call.getDeclaringType().getSimpleName());
+            return;
+        }
+
+        modifySubMethods(call.getExecutableDeclaration());
+        System.out.println("Modify call : "+call.getSimpleName()+" in "+call.getDeclaringType().getSimpleName());
+    }
+
+    /**
+     * Correct the selected sub method
+     *
+     * @param call
+     */
+    private void modifySubMethods(CtExecutable call){
+        // Find HashMap parameters
+        final List<CtParameter<?>> parameters = call.getElements(new AbstractFilter<CtParameter<?>>(CtParameter.class) {
+            @Override
+            public boolean matches(CtParameter<?> element) {
+                return element.getType().getSimpleName().equals("HashMap");
+            }
+        });
+
+        // Convert those parameters
+        for(CtParameter parameter : parameters){
+            HashMapToArrayMap(parameter.getType());
+        }
+
+        // Find every uses of the selected parameters
+        List<CtInvocation<?>> invoks = call.getBody().getElements(new AbstractFilter<CtInvocation<?>>(CtInvocation.class) {
+            @Override
+            public boolean matches(CtInvocation<?> element) {
+                for(CtElement arg : element.getArguments()){
+                    for (CtParameter parameter : parameters){
+                        if(parameter.getSimpleName().equals(arg.toString())){
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+        });
+
+        System.out.println("modify method : "+call.getSimpleName() + " in " + call.getParent(CtClass.class).getSimpleName());
+
+        // Recursive sub method modifications
+        for (CtInvocation subMethod : invoks){
+            analyzeSubMethods(subMethod.getExecutable());
+        }
+    }
+
+    /**
+     * Simple conversion from a CtTypeReference
+     *
+     * @param ref
+     */
+    private void HashMapToArrayMap(CtTypeReference<?> ref){
+        List<CtTypeReference<?>> types = ref.getActualTypeArguments();
+        ref.replace(getFactory().Code().createCtTypeReference(ArrayMap.class));
+        ref.setActualTypeArguments(types);
+    }
+
+    /**
+     * Check if the method analyzed is present in the reference csv
+     *
+     * @param candidate the method analyzed
+     * @return
+     */
     private boolean checkValidToCsv(CtMethod candidate){
         String class_file = candidate.getPosition().getFile().getName().split("\\.")[0];
 
@@ -249,13 +423,5 @@ public class HashMapProcessor extends AbstractProcessor<CtMethod> {
         }
 
         return false;
-    }
-
-    private enum HashMapUsage{
-        Normal,
-        OneParameterInt,
-        OneParameterMap,
-        TwoParameter,
-        Clone
     }
 }
